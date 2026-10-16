@@ -118,7 +118,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release:
     name: Create GitHub Release
-    needs: [build-web, build-python, build-openapi]
+    needs: [build-web, build-python]
     runs-on: ubuntu-latest
 
     steps:
@@ -134,20 +134,34 @@ jobs:
           name: dist
           path: ./dist/
 
-      - name: Download OpenAPI document
-        uses: actions/download-artifact@v4
-        with:
-          name: openapi
-          path: ./openapi/
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/repowise-web.tar.gz
             dist/*
-            openapi/openapi.json
           generate_release_notes: true
+
+  # ---------------------------------------------------------------------------
+  # Attach openapi.json after the release exists, so a failed export never
+  # holds back the web tarball that `repowise serve` downloads
+  # ---------------------------------------------------------------------------
+  attach-openapi:
+    name: Attach OpenAPI document
+    needs: [release, build-openapi]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download OpenAPI document
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi
+          path: ./openapi/
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: openapi/openapi.json
 
   # ---------------------------------------------------------------------------
   # Publish to PyPI
