@@ -135,10 +135,8 @@ def _build_language_registry() -> dict[str, Language]:
 
 _LANGUAGE_REGISTRY: dict[str, Language] = {}
 
-# Languages already reported as having a config but no installed grammar, so
-# the report is one line per language per process instead of one per file. A
-# repo with a few thousand shell scripts otherwise emitted a few thousand
-# identical lines, all saying the same three facts.
+# Languages already reported as having a config but no installed grammar:
+# one line per language per process, not one per file.
 _MISSING_GRAMMAR_REPORTED: set[str] = set()
 
 

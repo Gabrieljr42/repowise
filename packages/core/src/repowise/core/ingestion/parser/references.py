@@ -18,10 +18,8 @@ from ..parser_helpers import (
 
 _node_text = node_text
 
-# Languages whose query defines the ``@reference.*`` captures. Every other
-# language would only scan the whole match list to find nothing, so the check
-# is here rather than inside ``_extract_references``. The SFC tags reuse the
-# TS captures but stay out: resolution has no local-shadow scan for them.
+# Languages whose query defines the ``@reference.*`` captures. The SFC tags
+# reuse the TS captures but stay out: resolution has no local-shadow scan for them.
 _REFERENCE_LANGUAGES = ("cpp", "c", "go", "rust", "kotlin", "typescript", "javascript", "python")
 
 # Languages where a bare name resolves only through the file's own symbols or
@@ -202,11 +200,8 @@ def _extract_type_refs(
             head = head_of(type_node, src)
             if not head:
                 continue
-            # ``struct Wrapper<Item> { value: Item }`` binds Item as a type
-            # parameter, and the capture cannot tell that from a reference
-            # to a real ``struct Item``. The head extractor drops a
-            # single-letter ``T`` but not a named one, so the shadow has to
-            # be read off the enclosing item's ``type_parameters``.
+            # ``struct Wrapper<Item>`` binds Item as a type parameter; the
+            # capture cannot tell it from a real ``struct Item``.
             if lang == "rust" and _rust_shadowed_by_type_param(type_node, head, src):
                 continue
             line = type_node.start_point[0] + 1

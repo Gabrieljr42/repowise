@@ -125,11 +125,7 @@ from .symbols import (
     _parent_type_name,
 )
 
-# Any single file emitting more than this many symbols is almost
-# certainly machine-generated (large gRPC service contracts, OpenAPI
-# bindings, SQL schema bindings). Warn rather than truncate — operators
-# can decide whether to add the file to ``_NEVER_FLAG_PATTERNS`` or to
-# exclude it via traversal.
+# A file with more symbols than this is almost certainly generated; warn, never truncate.
 _SYMBOL_COUNT_WARN_THRESHOLD = 500
 
 

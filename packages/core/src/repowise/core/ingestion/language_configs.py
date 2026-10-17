@@ -1,9 +1,8 @@
 """Per-language parser configuration data.
 
 ``LanguageConfig`` plus the declarative ``LANGUAGE_CONFIGS`` table that
-drives :class:`~repowise.core.ingestion.parser.ASTParser`. Extracted from
-``parser.py`` so the parser module holds behaviour and this module holds
-the per-language data. The parser keeps re-exporting both names, so
+drives :class:`~repowise.core.ingestion.parser.ASTParser`: the parser holds
+behaviour, this module the per-language data. The parser keeps re-exporting both names, so
 ``from ...parser import LANGUAGE_CONFIGS, LanguageConfig`` still works.
 """
 
@@ -518,7 +517,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
             # The captured node is the binding's left-hand side, not the
             # enclosing function_or_value_defn: that one node holds every
             # clause of a `let rec f ... and g ...` group, so capturing it
-            # would give every clause the same span. parser.py extends each
+            # would give every clause the same span. the parser extends each
             # symbol over its own clause and filters the nested ones.
             "function_declaration_left": "function",
             "value_declaration_left": "variable",
@@ -547,7 +546,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_extraction="nesting",
         # Deliberately empty: no F# type node carries a `name` field, so the
         # generic walk in _find_parent would match an ancestor and then read
-        # nothing off it. The parent walk is language-gated in parser.py --
+        # nothing off it. The parent walk is language-gated in the parser --
         # see _fsharp_parent_name.
         parent_class_types=frozenset(),
     ),
@@ -604,7 +603,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
             # in one node shape (see spec docstring) -- "class" is the closest
             # single bucket, same tradeoff Go makes for `type_spec`: "struct".
             # A real kind refinement (peek at the `type` field to distinguish
-            # class/struct/interface/enum) would need a hook parser.py doesn't
+            # class/struct/interface/enum) would need a hook the parser doesn't
             # currently expose per-language the way it does for Go/Kotlin --
             # flagged as a follow-up, not attempted here.
             "declType": "class",

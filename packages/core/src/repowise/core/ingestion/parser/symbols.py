@@ -65,10 +65,8 @@ from .symbol_rules import (
 
 _node_text = node_text
 
-# Node types whose .scm patterns are anchored at module/program level
-# (constants and module variables). They can never be function-local, so
-# the callable-ancestor filter must not apply — and for TS/JS declarators
-# it would misfire on the parent lexical_declaration kind mapping.
+# Node types whose .scm patterns are anchored at module level, so the
+# callable-ancestor filter must not apply to them.
 _MODULE_ANCHORED_NODE_TYPES = frozenset({"assignment", "variable_declarator"})
 
 

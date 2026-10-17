@@ -235,10 +235,8 @@ def _attribute_decorators(def_node: Node, language: str, src: str) -> list[str]:
     """
     if language == "rust":
         return _rust_outer_attributes(def_node, src)
-    # C#: [Obsolete] / [System.Obsolete] are ``attribute_list`` nodes.
-    # In tree-sitter-c-sharp the attribute_list is child[0] of the
-    # declaration node itself (method_declaration, class_declaration, etc.),
-    # NOT a preceding sibling in the class body.
+    # C#: ``attribute_list`` is child[0] of the declaration itself, not a
+    # preceding sibling in the class body.
     if language == "csharp":
         return _leading_child_attributes(def_node, "attribute_list", "[", "]", src)
     # C/C++: [[deprecated]] / [[deprecated("reason")]] are
@@ -358,11 +356,8 @@ def _refine_visibility(
     src: str,
 ) -> tuple[str, bool]:
     """``(visibility, is_exported_symbol)`` after the language's AST-context rules."""
-    # C/C++ visibility is dictated by AST context (access
-    # specifiers / storage class / export attributes), not by
-    # modifier text. Refine after the generic fn ran. Objective-C's
-    # grammar is a superset of C's, so the same shapes apply to
-    # plain C code inside a ``.m`` file.
+    # C/C++ (and plain C inside Objective-C) visibility comes from AST
+    # context: access specifiers, storage class, export attributes.
     if language in ("cpp", "c", "objectivec"):
         return refine_cpp_visibility(def_node, visibility, src)
     # C#: an unmodified declaration's default depends on what encloses
