@@ -159,63 +159,11 @@ def _run_deterministic_generation_phase(
     return embedder
 
 
-def _run_generation_phase(
-    *,
-    repo_path: Path,
-    result: Any,
-    provider: Any,
-    total_phases: int,
-    concurrency: int,
-    language: str,
-    resolved_reasoning: str,
-    onboarding: bool,
-    wiki_style: str,
-    max_file_pages: int | None,
-    yes: bool,
-    dry_run: bool,
-    skip_tests: bool,
-    skip_infra: bool,
-    embedder_name_resolved: str,
-    resume: bool,
-    test_run: bool,
-    timings: Any | None = None,
-    warnings: list[str] | None = None,
-) -> tuple[bool, bool]:
-    """Run the LLM generation phase for a single-repo init.
-
-    Returns ``(stop, cost_declined)``: ``stop`` is True when this was a dry run
-    and the caller should return immediately; ``cost_declined`` is True when the
-    user declined the cost gate (generation skipped, index still saved). Mutates
-    ``result`` in place with the generated pages, vector store, and enriched KG.
-    """
+def _print_generation_plan(
+    est: Any, result: Any, provider: Any, *, concurrency: int, onboarding: bool
+) -> None:
+    """The priced plan: pages by type and author, languages, and onboarding."""
     from repowise.core.cost_estimator import STRUCTURAL_PAGE_TYPES
-    from repowise.core.generation import GenerationConfig
-
-    print_phase_header(
-        console,
-        3,
-        total_phases,
-        "Generation",
-        f"Generating wiki pages with {provider.provider_name} / {provider.model_name}",
-    )
-
-    gen_config = GenerationConfig.from_repo_config(
-        load_config(repo_path),
-        max_concurrency=concurrency,
-        language=language,
-        reasoning=resolved_reasoning,
-        enable_onboarding=onboarding,
-        wiki_style=wiki_style,
-        max_file_pages=max_file_pages,
-    )
-    plans, est = estimate_generation(
-        result=result,
-        gen_config=gen_config,
-        provider=provider,
-        repo_path=repo_path,
-        skip_tests=skip_tests,
-        skip_infra=skip_infra,
-    )
 
     # "Written by" answers the question the price below raises: most of this
     # total is free.
@@ -267,6 +215,66 @@ def _run_generation_phase(
         console.print("  [dim]Onboarding collection: disabled (--no-onboarding).[/dim]")
     console.print()
 
+
+def _run_generation_phase(
+    *,
+    repo_path: Path,
+    result: Any,
+    provider: Any,
+    total_phases: int,
+    concurrency: int,
+    language: str,
+    resolved_reasoning: str,
+    onboarding: bool,
+    wiki_style: str,
+    max_file_pages: int | None,
+    yes: bool,
+    dry_run: bool,
+    skip_tests: bool,
+    skip_infra: bool,
+    embedder_name_resolved: str,
+    resume: bool,
+    test_run: bool,
+    timings: Any | None = None,
+    warnings: list[str] | None = None,
+) -> tuple[bool, bool]:
+    """Run the LLM generation phase for a single-repo init.
+
+    Returns ``(stop, cost_declined)``: ``stop`` is True when this was a dry run
+    and the caller should return immediately; ``cost_declined`` is True when the
+    user declined the cost gate (generation skipped, index still saved). Mutates
+    ``result`` in place with the generated pages, vector store, and enriched KG.
+    """
+    from repowise.core.generation import GenerationConfig
+
+    print_phase_header(
+        console,
+        3,
+        total_phases,
+        "Generation",
+        f"Generating wiki pages with {provider.provider_name} / {provider.model_name}",
+    )
+
+    gen_config = GenerationConfig.from_repo_config(
+        load_config(repo_path),
+        max_concurrency=concurrency,
+        language=language,
+        reasoning=resolved_reasoning,
+        enable_onboarding=onboarding,
+        wiki_style=wiki_style,
+        max_file_pages=max_file_pages,
+    )
+    plans, est = estimate_generation(
+        result=result,
+        gen_config=gen_config,
+        provider=provider,
+        repo_path=repo_path,
+        skip_tests=skip_tests,
+        skip_infra=skip_infra,
+    )
+
+    _print_generation_plan(est, result, provider, concurrency=concurrency, onboarding=onboarding)
+
     if dry_run:
         console.print("  Dry run: no pages generated.")
         return True, False
@@ -274,6 +282,7 @@ def _run_generation_phase(
     # The single cost question. It declines rather than raises when it cannot
     # ask: init's index is not yet persisted, so raising would discard the run;
     # the caller's fallback renders the structural wiki and saves the index.
+    # `generate` and `update --full` raise instead: their index already exists.
     concept_n = concept_page_count(plans)
     console.print(
         f"  Writing [bold]{concept_n:,}[/bold] subsystem pages with "
