@@ -19,6 +19,21 @@ from .extractors.cobol import (
     normalize_cobol_call_target,
     normalize_cobol_symbol_name,
 )
+from .extractors.imports import (
+    DART_IMPORTS,
+    ELIXIR_IMPORTS,
+    FSHARP_IMPORTS,
+    GENERIC_IMPORTS,
+    JVM_IMPORTS,
+    PASCAL_IMPORTS,
+    PHP_IMPORTS,
+    PYTHON_IMPORTS,
+    RUST_IMPORTS,
+    SCALA_IMPORTS,
+    SWIFT_IMPORTS,
+    TS_JS_IMPORTS,
+    ImportExtractor,
+)
 from .extractors.visibility import (
     csharp_visibility,
     dart_visibility,
@@ -98,9 +113,14 @@ class LanguageConfig:
     # ``modifier``, Kotlin ``modifiers``), read into ``Symbol.modifiers``.
     modifier_node_types: frozenset[str] = field(default_factory=frozenset)
 
+    # How this language's import matches become ``Import`` records; see
+    # ``extractors.imports``.
+    import_extractor: ImportExtractor = GENERIC_IMPORTS
+
 
 LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
     "python": LanguageConfig(
+        import_extractor=PYTHON_IMPORTS,
         symbol_node_types={
             "function_definition": "function",
             "class_definition": "class",
@@ -115,6 +135,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_class_types=frozenset({"class_definition"}),
     ),
     "typescript": LanguageConfig(
+        import_extractor=TS_JS_IMPORTS,
         symbol_node_types={
             "function_declaration": "function",
             "generator_function_declaration": "function",
@@ -148,6 +169,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         declaration_node_types=frozenset({"function_signature", "method_signature"}),
     ),
     "javascript": LanguageConfig(
+        import_extractor=TS_JS_IMPORTS,
         symbol_node_types={
             "function_declaration": "function",
             "generator_function_declaration": "function",
@@ -178,6 +200,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_class_types=frozenset(),
     ),
     "rust": LanguageConfig(
+        import_extractor=RUST_IMPORTS,
         symbol_node_types={
             "function_item": "function",
             "function_signature_item": "function",
@@ -212,6 +235,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         reference_call_node_types=frozenset({"macro_invocation"}),
     ),
     "java": LanguageConfig(
+        import_extractor=JVM_IMPORTS,
         symbol_node_types={
             "class_declaration": "class",
             "interface_declaration": "interface",
@@ -280,6 +304,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         declaration_node_types=frozenset({"declaration"}),
     ),
     "kotlin": LanguageConfig(
+        import_extractor=JVM_IMPORTS,
         symbol_node_types={
             "function_declaration": "function",
             "class_declaration": "class",
@@ -374,6 +399,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         ),
     ),
     "swift": LanguageConfig(
+        import_extractor=SWIFT_IMPORTS,
         symbol_node_types={
             "class_declaration": "class",
             "protocol_declaration": "interface",
@@ -390,6 +416,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_class_types=frozenset({"class_declaration", "protocol_declaration"}),
     ),
     "dart": LanguageConfig(
+        import_extractor=DART_IMPORTS,
         symbol_node_types={
             "class_definition": "class",
             "mixin_declaration": "class",
@@ -419,6 +446,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         ),
     ),
     "scala": LanguageConfig(
+        import_extractor=SCALA_IMPORTS,
         symbol_node_types={
             "class_definition": "class",
             "trait_definition": "trait",
@@ -438,6 +466,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_class_types=frozenset({"class_definition", "trait_definition", "object_definition"}),
     ),
     "php": LanguageConfig(
+        import_extractor=PHP_IMPORTS,
         symbol_node_types={
             "class_declaration": "class",
             "interface_declaration": "interface",
@@ -457,6 +486,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         ),
     ),
     "elixir": LanguageConfig(
+        import_extractor=ELIXIR_IMPORTS,
         symbol_node_types={
             # Elixir's one node kind for every definition. "module" is a
             # placeholder, refined per keyword in refine_elixir_call_kind --
@@ -478,6 +508,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         parent_class_types=frozenset(),
     ),
     "fsharp": LanguageConfig(
+        import_extractor=FSHARP_IMPORTS,
         symbol_node_types={
             # `module Foo.Bar` / `namespace Foo.Bar` head the file;
             # `module X =` nests inside one.
@@ -567,6 +598,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         ),
     ),
     "pascal": LanguageConfig(
+        import_extractor=PASCAL_IMPORTS,
         symbol_node_types={
             # declType wraps class/record/interface/helper/enum/set/array/alias
             # in one node shape (see spec docstring) -- "class" is the closest
@@ -597,7 +629,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         visibility_fn=public_by_default,
         parent_extraction="nesting",
         # NOT {"declClass", "declIntf", "declHelper"} -- see the spec docstring.
-        # ASTParser._find_parent walks ancestors checking `ancestor.type in
+        # parser.symbols._find_parent walks ancestors checking `ancestor.type in
         # parent_class_types` then reads `ancestor.child_by_field_name("name")`;
         # only declType carries a name field, so pointing this at the inner
         # class/interface/helper node would silently return no parent for every
