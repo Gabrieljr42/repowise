@@ -11,7 +11,7 @@ workspace overlays, MCP responses, and CLI output.
 
 | Area | Main code paths | What gets computed |
 | --- | --- | --- |
-| Traversal and parsing | `packages/core/src/repowise/core/ingestion/traverser.py`, `packages/core/src/repowise/core/ingestion/parser.py`, `packages/core/src/repowise/core/ingestion/models.py` | Files, languages, entry points, symbols, imports, exports, calls, inheritance, parse errors, content hashes |
+| Traversal and parsing | `packages/core/src/repowise/core/ingestion/traverser.py`, `packages/core/src/repowise/core/ingestion/parser/`, `packages/core/src/repowise/core/ingestion/models.py` | Files, languages, entry points, symbols, imports, exports, calls, inheritance, parse errors, content hashes |
 | Graph construction | `packages/core/src/repowise/core/ingestion/graph.py`, `call_resolver.py`, `heritage_resolver.py`, `framework_edges.py`, `dynamic_hints/` | File and symbol nodes, import/call/heritage/framework/dynamic/co-change edges, centrality, SCCs, communities, execution flows |
 | Git intelligence | `packages/core/src/repowise/core/ingestion/git_indexer/` | Churn, ownership, hotspots, bus factor, co-change partners, significant commits, temporal scores, rename and merge signals |
 | Analysis | `packages/core/src/repowise/core/analysis/` | Dead-code findings, decision records, decision staleness, security findings, PR blast radius, execution flows, communities |
