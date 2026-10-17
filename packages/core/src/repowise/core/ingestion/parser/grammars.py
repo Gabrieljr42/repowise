@@ -214,9 +214,9 @@ def failed_query_languages(language_tags: Iterable[str]) -> list[tuple[str, str]
 
 
 def _get_language(tag: str) -> Language | None:
-    global _LANGUAGE_REGISTRY
+    # Filled in place, never rebound: the package re-exports this dict.
     if not _LANGUAGE_REGISTRY:
-        _LANGUAGE_REGISTRY = _build_language_registry()
+        _LANGUAGE_REGISTRY.update(_build_language_registry())
     return _LANGUAGE_REGISTRY.get(tag)
 
 

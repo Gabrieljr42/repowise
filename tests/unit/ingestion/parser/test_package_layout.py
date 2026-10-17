@@ -55,3 +55,11 @@ def test_every_config_carries_an_import_extractor() -> None:
     assert LANGUAGE_CONFIGS["go"].import_extractor is GENERIC_IMPORTS
     typescript = LANGUAGE_CONFIGS["typescript"].import_extractor
     assert LANGUAGE_CONFIGS["svelte"].import_extractor is typescript
+
+
+def test_language_registry_export_is_the_live_registry() -> None:
+    from repowise.core.ingestion.parser import grammars
+
+    parser_pkg._get_language("python")
+    assert parser_pkg._LANGUAGE_REGISTRY is grammars._LANGUAGE_REGISTRY
+    assert "python" in parser_pkg._LANGUAGE_REGISTRY
