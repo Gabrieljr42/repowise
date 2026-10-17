@@ -24,7 +24,7 @@ workspace overlays, MCP responses, and CLI output.
 
 | Term | Definition | Computed by | Example |
 | --- | --- | --- | --- |
-| Includable source file | A file that survives ignore rules, blocked patterns, size limit, binary detection, generated-file detection, and language detection. | `FileTraverser._build_file_info()` | `packages/core/src/repowise/core/ingestion/parser.py` |
+| Includable source file | A file that survives ignore rules, blocked patterns, size limit, binary detection, generated-file detection, and language detection. | `FileTraverser._build_file_info()` | `packages/core/src/repowise/core/ingestion/traverser.py` |
 | `FileInfo` | Per-file metadata used by the parser and graph builder. | `FileTraverser.traverse()` | `{path: "src/app.py", language: "python", is_test: false, is_entry_point: true}` |
 | Language tag | Canonical language value from file extension, special filename, or shebang. | `ingestion/models.py`, `traverser.py`, `languages/registry.py` | `python`, `typescript`, `go`, `terraform`, `openapi`, `unknown` |
 | Test file flag | Whether a file looks like a test/spec/fixture file. | `FileTraverser._build_file_info()` and community/test-gap helpers | `tests/test_auth.py -> is_test=true` |
