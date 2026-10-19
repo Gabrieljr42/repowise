@@ -233,6 +233,44 @@ class TestImports:
         fmt = next(i for i in parsed.imports if i.module_path == "../lib/format")
         assert [b.local_name for b in fmt.bindings] == ["formatDate"]
 
+    def test_markup_script_src_and_link_href_are_extracted(self, parser) -> None:
+        src = (
+            b'---\nconst title = "Home";\n---\n'
+            b'<script src="./analytics.ts"></script>\n'
+            b'<script src="./self-closing.ts" />\n'
+            b'<link rel="stylesheet" href="../styles/site.css">\n'
+            b'<!-- <script src="./ignored-comment.js"></script> -->\n'
+            b'{/* <script src="./ignored-jsx-comment.js"></script> */}\n'
+            b'<script src="https://cdn.example.com/lib.js"></script>\n'
+            b'<Script src="./NotHtmlScript.astro" />\n'
+        )
+        file_info = _file("src/pages/index.astro", len(src))
+        parsed = parser.parse_file(file_info, src)
+        module_paths = [i.module_path for i in parsed.imports]
+        assert "./analytics.ts" in module_paths
+        assert "./self-closing.ts" in module_paths
+        assert "../styles/site.css" in module_paths
+        assert "./ignored-comment.js" not in module_paths
+        assert "./ignored-jsx-comment.js" not in module_paths
+        assert "https://cdn.example.com/lib.js" not in module_paths
+        assert "./NotHtmlScript.astro" not in module_paths
+
+        # Also verify parse_imports directly matches
+        imported = [i.module_path for i in parser.parse_imports(file_info, src)]
+        assert "./analytics.ts" in imported
+        assert "./self-closing.ts" in imported
+        assert "../styles/site.css" in imported
+
+    def test_markup_and_frontmatter_imports_are_deduplicated(self, parser) -> None:
+        src = (
+            b'---\nimport "./shared.ts";\n---\n'
+            b'<script src="./shared.ts"></script>\n'
+        )
+        file_info = _file("src/pages/index.astro", len(src))
+        parsed = parser.parse_file(file_info, src)
+        matching = [i for i in parsed.imports if i.module_path == "./shared.ts"]
+        assert len(matching) == 1
+
 
 class TestCalls:
     def test_frontmatter_calls_are_extracted(self, parsed) -> None:
