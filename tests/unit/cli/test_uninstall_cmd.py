@@ -597,6 +597,7 @@ def test_a_configured_database_is_listed_as_kept_with_a_reason(repo: Path, monke
 
 def test_configured_database_locator_preserves_forward_slashes_on_windows(monkeypatch) -> None:
     from pathlib import PureWindowsPath
+
     from repowise.cli.uninstall.inventory import _store_item
 
     monkeypatch.setenv("REPOWISE_DB_URL", "postgresql://alice:s3cret@db.example:5432/wiki")
