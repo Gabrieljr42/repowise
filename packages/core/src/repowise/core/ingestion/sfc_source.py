@@ -731,6 +731,10 @@ def extract_astro_markup_imports(source: bytes) -> list[Import]:
                 continue
             close_match = _ASTRO_CLOSE[b"script"].search(source, opener.end())
             buf[opener.end() : close_match.start()] = b" " * (close_match.start() - opener.end())
+            # `\Z` means the body ran to EOF. The HTML grammar drops `src` on an
+            # element that never closes, so supply a closer after the blanked body.
+            if close_match.start() == close_match.end():
+                buf.extend(b"</script>")
             pos = close_match.end()
             continue
         pos = opener.end()

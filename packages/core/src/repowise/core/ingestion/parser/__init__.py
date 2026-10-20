@@ -174,11 +174,7 @@ class ASTParser:
         src = source.decode("utf-8", errors="replace")
         imports = _extract_imports(matches, config, file_info, src)
         if lang == "astro":
-            seen_modules = {imp.module_path for imp in imports}
-            for markup_imp in extract_astro_markup_imports(original_source):
-                if markup_imp.module_path not in seen_modules:
-                    seen_modules.add(markup_imp.module_path)
-                    imports.append(markup_imp)
+            _merge_markup_imports(imports, extract_astro_markup_imports(original_source))
         return imports
 
     def parse_file(self, file_info: FileInfo, source: bytes) -> ParsedFile:
@@ -229,11 +225,7 @@ class ASTParser:
         _restore_kotlin_annotations(symbols, recovered_annotations)
         imports = _extract_imports(matches, config, file_info, src)
         if lang == "astro":
-            seen_modules = {imp.module_path for imp in imports}
-            for markup_imp in extract_astro_markup_imports(original_source):
-                if markup_imp.module_path not in seen_modules:
-                    seen_modules.add(markup_imp.module_path)
-                    imports.append(markup_imp)
+            _merge_markup_imports(imports, extract_astro_markup_imports(original_source))
         calls = _extract_calls(matches, config, file_info, src, symbols)
         # An SFC's markup tags (``<Foo />``) are component calls the TS buffer lost.
         calls.extend(component_call_sites(lang, original_source, symbols))
@@ -265,6 +257,15 @@ class ASTParser:
             registrars=registrars,
             references=references,
         )
+
+
+def _merge_markup_imports(imports: list[Import], markup_imports: list[Import]) -> None:
+    """Append markup imports whose module path is not already present."""
+    seen = {imp.module_path for imp in imports}
+    for markup_imp in markup_imports:
+        if markup_imp.module_path not in seen:
+            seen.add(markup_imp.module_path)
+            imports.append(markup_imp)
 
 
 def _is_fsharp_signature(file_info: FileInfo) -> bool:

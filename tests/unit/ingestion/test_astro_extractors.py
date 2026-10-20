@@ -293,6 +293,38 @@ class TestImports:
         assert "./real-after-inline.ts" in module_paths
         assert "../styles/site.css" in module_paths
 
+    def test_multiline_attributes_and_reordered_link_attrs(self, parser) -> None:
+        src = (
+            b"---\nconst ready = true;\n---\n"
+            b"<Header />\n"
+            b"<script defer\n"
+            b'  src="./analytics.ts"></script>\n'
+            b"<link href='../styles/site.css' rel=\"stylesheet\">\n"
+            b'<script type="module" src="./module.ts" />\n'
+        )
+        file_info = _file("src/pages/index.astro", len(src))
+        module_paths = [i.module_path for i in parser.parse_file(file_info, src).imports]
+        assert module_paths == ["./analytics.ts", "../styles/site.css", "./module.ts"]
+        assert [i.module_path for i in parser.parse_imports(file_info, src)] == module_paths
+
+    def test_unterminated_script_keeps_its_src_and_hides_the_rest(self, parser) -> None:
+        # An unclosed script body runs to EOF, so a later link is not a markup import.
+        src = b'<script src="./kept.ts">\n<link href="./hidden.css">\n<Card />'
+        file_info = _file("src/pages/index.astro", len(src))
+        module_paths = [i.module_path for i in parser.parse_imports(file_info, src)]
+        assert module_paths == ["./kept.ts"]
+        assert scan("astro", src).component_tags == ()
+
+    def test_unterminated_style_hides_a_following_script(self, parser) -> None:
+        src = b"<style>\nbody { color: red; }\n<script src=\"./hidden.ts\"></script>\n"
+        file_info = _file("src/pages/index.astro", len(src))
+        assert [i.module_path for i in parser.parse_imports(file_info, src)] == []
+
+    def test_unclosed_attribute_quote_still_reads_the_previous_tag(self, parser) -> None:
+        src = b'<script src="./ok.ts"></script>\n<script src="unterminated>\n'
+        file_info = _file("src/pages/index.astro", len(src))
+        assert [i.module_path for i in parser.parse_imports(file_info, src)] == ["./ok.ts"]
+
 
 class TestCalls:
     def test_frontmatter_calls_are_extracted(self, parsed) -> None:
