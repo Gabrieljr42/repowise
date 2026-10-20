@@ -693,10 +693,12 @@ def extract_astro_markup_imports(source: bytes) -> list[Import]:
 
     buf = bytearray(source)
     frontmatter = _ASTRO_FRONTMATTER.match(source)
+    markup_start = 0
     if frontmatter:
-        buf[: frontmatter.end()] = b" " * frontmatter.end()
+        markup_start = frontmatter.end()
+        buf[:markup_start] = b" " * markup_start
 
-    pos = 0
+    pos = markup_start
     while (opener := _ASTRO_OPENER.search(source, pos)) is not None:
         if opener.group(1) is not None:
             close_bytes = _ASTRO_COMMENT_CLOSE[opener.group(1)]
@@ -712,12 +714,24 @@ def extract_astro_markup_imports(source: bytes) -> list[Import]:
             buf[opener.start() : end] = b" " * (end - opener.start())
             pos = end
             continue
-        tag = opener.group(2)
+        tag, attrs = opener.group(2), opener.group(3)
         if tag == b"style":
+            if attrs and attrs.rstrip().endswith(b"/"):
+                buf[opener.start() : opener.end()] = b" " * (opener.end() - opener.start())
+                pos = opener.end()
+                continue
             close_match = _ASTRO_CLOSE[b"style"].search(source, opener.end())
             end = close_match.end()
             buf[opener.start() : end] = b" " * (end - opener.start())
             pos = end
+            continue
+        if tag == b"script":
+            if attrs and attrs.rstrip().endswith(b"/"):
+                pos = opener.end()
+                continue
+            close_match = _ASTRO_CLOSE[b"script"].search(source, opener.end())
+            buf[opener.end() : close_match.start()] = b" " * (close_match.start() - opener.end())
+            pos = close_match.end()
             continue
         pos = opener.end()
 

@@ -271,6 +271,28 @@ class TestImports:
         matching = [i for i in parsed.imports if i.module_path == "./shared.ts"]
         assert len(matching) == 1
 
+    def test_markup_script_extracted_when_frontmatter_and_inline_scripts_contain_comment_or_style(
+        self, parser
+    ) -> None:
+        src = (
+            b'---\n'
+            b'const note = "<!-- in frontmatter string";\n'
+            b'const style = "<style>body{color:red}</style>";\n'
+            b'---\n'
+            b'<script>\n'
+            b'  // Inline script containing tricky comment/style strings\n'
+            b'  const x = "<!-- unclosed comment in script";\n'
+            b'  const y = "<style>p { font-size: 14px; }</style>";\n'
+            b'</script>\n'
+            b'<script src="./real-after-inline.ts"></script>\n'
+            b'<link rel="stylesheet" href="../styles/site.css">\n'
+        )
+        file_info = _file("src/pages/index.astro", len(src))
+        parsed = parser.parse_file(file_info, src)
+        module_paths = [i.module_path for i in parsed.imports]
+        assert "./real-after-inline.ts" in module_paths
+        assert "../styles/site.css" in module_paths
+
 
 class TestCalls:
     def test_frontmatter_calls_are_extracted(self, parsed) -> None:
